@@ -197,18 +197,7 @@ class AvalancheBulletinScraper():
 url = 'https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=265&id_rubrique=50'
 where_to_save = 'avalanche_bulletin'
 
-scraper = AvalancheBulletingScraper(url, where_to_save)
+scraper = AvalancheBulletinScraper(url, where_to_save)
 date_to_scrap = scraper.scrap_calendar_available_date()
-scraper.scrap_bulletins({'2016': {'3': ['16', '17', '18']}})
 scraper.scrap_bulletins(date_to_scrap)
-
-year = '2016'
-month = '11'
-day = '1'
-
-scraper.is_bulletin_available(year, month, day)
-
-for i in range(10):
-    a = WebDriverWait(self.driver, self.wait).until(EC.element_to_be_clickable((By.XPATH, "//select[@id='select_massif']")))
-    print(a.get_attribute('value'))
 
