@@ -58,12 +58,11 @@ REGIONS =     ['CHABLAIS',
                'CAPCIR-PUYMORENS']
 
 
-
-
 class AvalancheBulletinScraper():
-    
+
     def __init__(self, url, where_to_save, implicity_wait=10):
-        
+
+        self.url = url
         self.wait = implicity_wait
         self.where_to_save = where_to_save
         self.create_driver(url)
@@ -134,7 +133,7 @@ class AvalancheBulletinScraper():
 
         return available_region
     
-    def scrap_bulletings(self, date_to_scrap):
+    def scrap_bulletins(self, date_to_scrap):
         
         for year, available_months in date_to_scrap.items():
             for month, available_days in available_months.items():
@@ -142,9 +141,8 @@ class AvalancheBulletinScraper():
                     time.sleep(1)
                     print(year, month, day)
                     regions = self.is_bulletin_available(year, month, day)
-                    print(regions)
                     if regions:
-                        for zone in regions[:2]:
+                        for zone in regions:
                             print(zone, year, month, day)
                             downloaded = self.is_bulletin_downloaded(zone, year, month, day)
                             if downloaded:
@@ -155,7 +153,7 @@ class AvalancheBulletinScraper():
                             except Exception as e:
                                 print(e)
                                 self.driver.close()
-                                self.create_driver(url)
+                                self.create_driver(self.url)
                     else:
                         print(f'NO REPORT AVAILABLE for {year}-{month}-{day}')
                         continue
@@ -194,10 +192,10 @@ class AvalancheBulletinScraper():
 
         return json_date
 
-url = 'https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=265&id_rubrique=50'
-where_to_save = 'avalanche_bulletin'
+#url = 'https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=265&id_rubrique=50'
+#where_to_save = 'avalanche_bulletin'
 
-scraper = AvalancheBulletinScraper(url, where_to_save)
-date_to_scrap = scraper.scrap_calendar_available_date()
-scraper.scrap_bulletins(date_to_scrap)
+#scraper = AvalancheBulletinScraper(url, where_to_save)
+#date_to_scrap = scraper.scrap_calendar_available_date()
+#scraper.scrap_bulletins(date_to_scrap)
 
