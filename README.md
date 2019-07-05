@@ -1,2 +1,2 @@
-# avalanche_forecasting
-Avalanche predictions  based on ML technique
+# Avalanche forecasting
+This project aims to increase spatial resolution of currently avy forecasts made in France
