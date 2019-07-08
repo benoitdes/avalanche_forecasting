@@ -6,7 +6,7 @@ The idea is to apply machine learning to automatically forecast avalanche danger
 
 ## Current approach
 
-Professional avalanche forecasts are currently based on weather, snow and manually collected information. These forecasts are made at regional scale, one day in advance. They heavily rely on professional expertise and physical modelisation of snow pack information.
+Professional avalanche forecasts are currently based on weather, snow and manually collected information. These forecasts are made at regional scale, one day in advance. They heavily rely on professional expertise, weather information and physical modelisation of snow pack.
 
 ## Propose approach
 Very few attempts have been done to forecast avalanche danger using machine learning methods. Since a few years, many weather, snow and historical forecast information have been made available on the internet as open dataset (see here for French open datasets).
