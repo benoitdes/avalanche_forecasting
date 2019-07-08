@@ -15,7 +15,7 @@ Moreover, more and more information about avalanches are reported every year by 
 The goal of this open source project is to evaluate the possibility to improve avalanche danger prediction based on open datasets and individually collected information.
 Current professional forecasts have a good precision but lack of granularity in space: the idea is to use very local information about avalanche activity (based on avalanche occurrences reported by individuals) with snow and weather information made available online to create machine learning models that will be able to forecast avalanche danger in a very fine resolution.
 
-We could then take advantage of knowledge gained in regions where we have substancial information (for example the Alps) to give avalanche danger forcasts in region that currently lack of them (mainly Himalayan region)
+We could then take advantage of knowledge gained in regions where we have substancial information (for example the Alps) to give avalanche danger forcasts in region that currently lack of them (mainly Himalayan region).
 
 ## Contacts
 
