@@ -19,4 +19,4 @@ We could then take advantage of knowledge gained in regions where we have substa
 
 ## Contacts
 
-Feel free to send me a email at benoit.desvignes@protonmail.com for more detailed information. I would love to work on this problem with ML enthousiasts, person with avalanche modelisation knowledge and everyone that believe that we can things with collective and opensource project !
+Feel free to send me an email at benoit.desvignes@protonmail.com for more detailed information. I would love to work on this problem with ML enthousiasts, person with avalanche modelisation knowledge and everyone who believe that we can change things with collective and opensource project !
