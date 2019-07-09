@@ -1,3 +1,5 @@
 *.pyc
 *.py~
 .DS_Store
+scripts/*
+data/*
