@@ -9,7 +9,7 @@ Created on Tue May 21 22:00:09 2019
 import pandas as pd
 import numpy as np
 from pathlib import Path
-
+import json
 
 def parse_html(url):
 
@@ -87,7 +87,7 @@ for link in good_links:
 
 
 data = create_dataset_from_report('data_avalanche_report')
-
+data.to_csv('avalanche_report_data.csv', index=False)
 
 KEYS = ['id',
         'pays',
