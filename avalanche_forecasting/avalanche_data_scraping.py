@@ -37,18 +37,6 @@ def save_avalanche_info(dic_data):
         json.dump(dic_data, f)
 
 
-def create_dataset_from_report(report_fp):
-
-    data_info = pd.DataFrame()
-    for path in Path(report_fp).glob('*.json'):
-        print(path)
-        with path.open(mode='r') as file:
-            info = json.loads(file.read())
-        data = pd.DataFrame({k: [info[k]] for k in list(set(info.keys()) & set(KEYS))})
-        data_info = data_info.append(data, sort=True)
-    return data_info
-
-
 #### save information from data-avalanche.org ####
 
 from selenium import webdriver
@@ -85,9 +73,6 @@ for link in good_links:
     dic_data = get_avalanche_info(soup)
     save_avalanche_info(dic_data)
 
-
-data = create_dataset_from_report('data_avalanche_report')
-data.to_csv('avalanche_report_data.csv', index=False)
 
 KEYS = ['id',
         'pays',
