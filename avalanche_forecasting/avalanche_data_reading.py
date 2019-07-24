@@ -7,6 +7,7 @@ Created on Sun Jun 30 20:54:45 2019
 """
 
 import json
+from pathlib import Path
 
 
 def create_dataset_from_report(report_fp):
@@ -22,5 +23,8 @@ def create_dataset_from_report(report_fp):
 
 
 
-data = create_dataset_from_report('data_avalanche_report')
-data.to_csv('avalanche_report_data.csv', index=False)
+
+if __name__ == '__main__':
+
+    data = create_dataset_from_report('data_avalanche_report')
+    data.to_csv('avalanche_report_data.csv', index=False)
