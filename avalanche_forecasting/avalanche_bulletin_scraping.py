@@ -192,10 +192,13 @@ class AvalancheBulletinScraper():
 
         return json_date
 
-#url = 'https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=265&id_rubrique=50'
-#where_to_save = 'avalanche_bulletin'
 
-#scraper = AvalancheBulletinScraper(url, where_to_save)
-#date_to_scrap = scraper.scrap_calendar_available_date()
-#scraper.scrap_bulletins(date_to_scrap)
+if __name__=='__main__':
+
+    url = 'https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=265&id_rubrique=50'
+    where_to_save = 'avalanche_bulletin'
+    scraper = aB.AvalancheBulletinScraper(url, where_to_save)
+    date_to_scrap = scraper.scrap_calendar_available_date()
+    scraper.scrap_bulletins(date_to_scrap)
+
 
