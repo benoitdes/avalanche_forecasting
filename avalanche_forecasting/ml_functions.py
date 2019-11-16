@@ -150,13 +150,4 @@ def evaluate_perf_station(data):
             perf_stat[station]['baseline'] = accuracy(Y_base, pred_base)[0]
 
     return perf_stat
-    
-    
 
-    
-    
-    
-    
-    
-    
-    

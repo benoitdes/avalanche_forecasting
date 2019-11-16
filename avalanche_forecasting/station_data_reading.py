@@ -8,7 +8,6 @@ Created on Mon May 14 22:30:53 2018
 import pandas as pd
 import datetime
 import numpy as np
-import urllib
 import os
 
 import matplotlib.pyplot as plt
@@ -18,36 +17,41 @@ import matplotlib.cm as cm
 
 idx = pd.IndexSlice
 
+SCRIPT_DIRPATH = os.path.dirname(__file__)
 
 #########################################
 #########################################
 #########################################
 #########################################
 
-def create_dataset(list_year,list_month) :
+def create_dataset(list_year,list_month):
     
     res = pd.DataFrame()
-    for ayear in list_year :
-        for amonth in list_month :
-            try :
-                data_loaded = pd.read_csv('data/'+str(ayear)+amonth+'.gz',delimiter=';')
-                res = pd.concat([res,data_loaded])
-            except :
+    for ayear in list_year:
+        for amonth in list_month:
+            try:
+                print(os.path.join(SCRIPT_DIRPATH, '../', 'data/weather_snow_data/'+str(ayear)+amonth+'.gz'))
+                data_loaded = pd.read_csv(os.path.join(SCRIPT_DIRPATH, '../', 'data/weather_snow_data/'+str(ayear)+amonth+'.gz'), delimiter=';')
+                res = pd.concat([res, data_loaded])
+            except:
                 print('no data available for',ayear+amonth)
             
     res = res[res['date'] != 'date']
-    res['date'] = res['date'].apply(lambda x : datetime.datetime.strptime(str(x)[:10], '%Y%m%d%H'))
+    res['date'] = res['date'].apply(lambda x: datetime.datetime.strptime(str(x)[:10], '%Y%m%d%H'))
 
     #select only month between november and april
-    res['month'] = res['date'].apply(lambda x : x.month)
+    res['month'] = res['date'].apply(lambda x: x.month)
     res = res[res['month'].isin([11, 12, 1, 2, 3, 4])]
 
-    res.replace('mq',np.nan,inplace=True)
+    res.replace('mq', np.nan, inplace=True)
 
-    station_infos = pd.read_csv('data/postesNivo.csv').dropna()
+    station_infos = pd.read_csv(os.path.join(SCRIPT_DIRPATH, '../', 'data/weather_snow_data/postesNivo.csv')).dropna()
     res['numer_sta'] = res['numer_sta'].astype('int64')
     
-    res = res.merge(station_infos,on='numer_sta')
+    res = res.merge(station_infos, on='numer_sta')
+    
+    return res
+
     
     #drop not usefull feature
     res.drop(['month', 'ww','w2','w1','cl','cm','ch',
@@ -57,6 +61,8 @@ def create_dataset(list_year,list_month) :
             inplace=True)
 
     #keep only cols where at least 80 percent of values are not nan except for aval_risque
+    
+    
     res = select_cols(res, threshold=0.8)
     
     #deal with error linked to type of data

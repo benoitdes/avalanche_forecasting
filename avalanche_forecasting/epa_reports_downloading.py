@@ -10,7 +10,8 @@ import pandas as pd
 import numpy as np
 from  collections import defaultdict
 import urllib
-
+import glob
+import datetime
 
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
@@ -53,87 +54,79 @@ for region in list_region:
             urllib.request.urlretrieve(f'{region_url}/{pdf}', f'data/epa_reports/{pdf}')
 
 
-#### NEED TO FIND A WAY TO CONVERT PDF TO XLSX OR OTHER WAY TO TRANSFORM PDF TO PANDAS DATAFRAME
+
+
+urllib.request.urlretrieve('http://vmapfishbda.grenoble.cemagref.fr/cgi-bin/mapserv?map=/var/www/prod/affichage_epa.map&LAYERS=talweg_branche&TRANSPARENT=true&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&EXCEPTIONS=application%2Fvnd.ogc.se_inimage&FORMAT=image%2Fpng&SRS=EPSG%3A27572&BBOX=968321.56043969,2047659.1795974,969221.14328725,2048558.7624449&WIDTH=340&HEIGHT=340', 'test')
 
 
 
 
 
 
-### CREATE DATASET FROM XLSX
 
-xlsx_file = 'data/epa_reports/EPA_ListeEvts_04006_ALLOS.xlsx'
+## CONVERT PDF TO XLSX USING ILOVEPDF WEBSITE
 
 
-xl = pd.ExcelFile(xlsx_file)
-xl.sheet_names
-final_res = pd.DataFrame()
+import glob
+from selenium import webdriver
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from urllib.request import urlopen, urlretrieve
+from bs4 import BeautifulSoup
+import time
+import json
+from collections import defaultdict
 
-for page in xl.sheet_names:
-    print(page)
-    if True: #try:
-        df = xl.parse(page) 
-        df.columns = ['first_col'] + list(df.columns[1:])
-        
-        for i in range(len(df)):
-            #print(i)
-            try:
-                if 'id' in df.iloc[i]['first_col']:
-                    start_index = i
-                    break
-            except TypeError:
-                pass #print('nan value')
-        
-        df = df.iloc[start_index + 1:]
-        
-        start_event = []
-        for i in range(len(df)):
-            #print(i)
-            try:
-                if 'n°' in df.iloc[i]['first_col']:
-                    start_event.append(i)
-            except TypeError:
-                pass #print('nan value')
-        #print(df.shape)
-        #print(df['Unnamed: 6'], df['Unnamed: 7'], df['Unnamed: 8'], df['Unnamed: 9'], df['Unnamed: 10'])
-        
-        info = defaultdict(list)
-        for i in range(len(start_event)-1):
-            data_event = df.iloc[start_event[i] : start_event[i + 1]]
-            #if len(data_event) < 3:
-            #    print('not enough information')
-            #    continue
-            info['page'].append(page)
-            info['site_id'].append(data_event['first_col'].iloc[0])
-            info['numero_id'].append(data_event['first_col'].iloc[1])
-            try:
-                info['date_constat'].append(data_event['first_col'].iloc[2])
-            except:
-                info['date_constat'].append(np.nan)
-            info['date_1'].append(data_event['Unnamed: 1'].iloc[0])
-            info['date_2'].append(data_event['Unnamed: 2'].iloc[0])
-            info['altitude_depart'].append(data_event['Unnamed: 4'].iloc[0])
-            info['altitude_arrivee'].append(data_event['Unnamed: 5'].iloc[0])
-            if df.shape[1] in [44, 45]:
-                info['longueur'].append(data_event['Unnamed: 7'].iloc[0])
-                info['largeur'].append(data_event['Unnamed: 9'].iloc[0])
-                info['hauteur'].append(data_event['Unnamed: 10'].iloc[0])
-            elif df.shape[1] == 43:
-                info['longueur'].append(data_event['Unnamed: 6'].iloc[0])
-                info['largeur'].append(data_event['Unnamed: 8'].iloc[0])
-                info['hauteur'].append(data_event['Unnamed: 9'].iloc[0])
-            elif df.shape[1] == 46:
-                info['longueur'].append(data_event['Unnamed: 8'].iloc[0])
-                info['largeur'].append(data_event['Unnamed: 9'].iloc[0])
-                info['hauteur'].append(data_event['Unnamed: 10'].iloc[0])
-            else:
-                print(df.shape)
 
-        res_page = pd.DataFrame(info)        
-        final_res = pd.concat([final_res, res_page])    
-    else:#except:
-        print(f'error for {page}')
+
+import os
+url = 'https://www.ilovepdf.com/pdf_to_excel'
+
+chrome_options = webdriver.ChromeOptions()
+options = webdriver.ChromeOptions() 
+download_fp = '/Users/plume/Desktop/divers/perso/avalanche_forecasting/data/epa_reports/xlsx'
+prefs = {'download.default_directory' : download_fp}
+chrome_options.add_experimental_option('prefs', prefs)
+driver = webdriver.Chrome(chrome_options=chrome_options)
+driver.implicitly_wait(30)
+driver.get(url)
+
+
+
+for file in glob.glob('data/epa_reports/pdf/*'):
+    try:
+        print(file)
+        xlsx_file = file.split('/')[-1].replace('pdf', 'xlsx')
+        if glob.glob(f'{download_fp}/{xlsx_file}*'):
+            print('file already exists')
+            continue
     
+
+        #button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//input[@type='file']")))
+        button = driver.find_element_by_xpath("//input[@type='file']")
+        button.send_keys(os.path.join(os.getcwd(), file))
+    
+        element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@id='processTask']")))
+        driver.execute_script("arguments[0].click();", element)
+    
+        while not os.path.exists(os.path.join(download_fp, xlsx_file)):
+            time.sleep(1)
+            print('Waiting for files to download...')
+    
+        button = driver.find_element_by_xpath("//a[@href='https://www.ilovepdf.com/pdf_to_excel']")
+        button.click()
+    except:
+        chrome_options = webdriver.ChromeOptions()
+        options = webdriver.ChromeOptions() 
+        download_fp = '/Users/plume/Desktop/divers/perso/avalanche_forecasting/data/epa_reports/xlsx'
+        prefs = {'download.default_directory' : download_fp}
+        chrome_options.add_experimental_option('prefs', prefs)
+        driver = webdriver.Chrome(chrome_options=chrome_options)
+        driver.implicitly_wait(30)
+        driver.get(url)
+
 
 
 
