@@ -60,12 +60,12 @@ outProj = Proj(init='epsg:4326')
 grid = {}
 tif = []
 
-for i, folder in enumerate(glob.glob('data/dem_30/*')):
+for i, folder in enumerate(glob.glob('../data/dem_30/*')):
     print(folder)
     dem_file = f'{folder}/{folder.split("/")[-1]}.tif'
     tif.append(folder)
     with rasterio.open(dem_file) as src:
-        #data = src.read(1)
+        data = src.read(1)
         print(src.bounds)
         transformation = src.transform
         projection = Proj(src.crs)
@@ -73,6 +73,7 @@ for i, folder in enumerate(glob.glob('data/dem_30/*')):
         lower_right = transform(projection, outProj, src.bounds.right, src.bounds.bottom)
         lon, lat = np.meshgrid(*regular_grid(upper_left, lower_right, 0.01))
         grid[i] = pd.DataFrame(np.concatenate((lon.reshape(-1, 1), lat.reshape(-1, 1)), axis=1), columns=['lon', 'lat'])
+        grid[i][['lat', 'lon']] = grid[i][['lat', 'lon']].round(4)
         grid[i]['val'] = i
         
 
@@ -80,7 +81,7 @@ big_grid = pd.DataFrame()
 for key in grid.keys():
     big_grid = pd.concat([big_grid, grid[key]])
 
-big_grid.to_csv('grid.csv')
+big_grid.to_csv('../data/geospatial_data/big_grid.csv')
 
 #### TIF CORRESPONDING TO VANOISE MASSIF IS  LOCATED IN data/dem_30/N245E405/N245E405.tif
 #### WE THEN CREATE ASPECT AND SLOPE TIF FILE USING QGIS
@@ -88,7 +89,7 @@ big_grid.to_csv('grid.csv')
 
 
 #### COMPUTE SLOPE AND ASPECT FROM VANOISE DEM
-for type, file in {'aspect': 'data/aspect_vanoise.tif', 'slope': 'data/slope_vanoise.tif', 'dem': 'data/dem_vanoise.tif'}.items():
+for type, file in {'aspect': '../data/geospatial_data/aspect_vanoise.tif', 'slope': '../data/geospatial_data/slope_vanoise.tif', 'dem': '../data/geospatial_data/dem_vanoise.tif'}.items():
     with rasterio.open(file) as src:
         elevation_data = src.read(1)
         print(src.bounds)
@@ -96,11 +97,10 @@ for type, file in {'aspect': 'data/aspect_vanoise.tif', 'slope': 'data/slope_van
         projection = Proj(src.crs)
         upper_left = transform(projection, outProj, src.bounds.left, src.bounds.top)
         lower_right = transform(projection, outProj, src.bounds.right, src.bounds.bottom)
-        x, y = np.meshgrid(range(len(elevation_data)), range(elevation_data.shape[1]))
-        x = x.reshape(-1, 1)
-        y = y.reshape(-1, 1)
-        x, y = transform(projection, outProj, *transformation * (x, y))    
-        grid = pd.DataFrame(np.concatenate((x, y), axis=1), columns=['lon', 'lat'])
+        x, y = np.array(range(len(elevation_data))), np.array(range(elevation_data.shape[1]))
+        x, y = transform(projection, outProj, *transformation * (x, y))
+        x, y = np.meshgrid(np.round(x, 4), np.round(y, 4))
+        grid = pd.DataFrame(np.concatenate((x.reshape(-1, 1), y.reshape(-1, 1)), axis=1), columns=['lon', 'lat'])
         grid['val'] = elevation_data.reshape(-1, 1)
         grid.to_csv(f'data/geospatial_data/{type}_data.csv')
 
@@ -141,6 +141,10 @@ np.sin(np.pi * 360/180)
 np.cos(np.pi * 360/180)
 
 
+grid[['lat', 'lon']] = grid[['lat', 'lon']]
+grid.to_csv(f'../data/geospatial_data/{type}_data.csv')
 
 
 
+#### reconstruire geo_data_bessans avec les nouvelles données aspect, slope et dem
+#### push les modifs du plume mac du script epa_reports_reading.py

@@ -65,5 +65,37 @@ with open(f'../data/avalanche_path/bessans/{site_id}.json', 'w') as f:
 
 
 with open(f'../data/avalanche_path/bessans/{site_id}.json', 'r') as f:
-    a=json.load(f)
+    a = json.load(f)
+
+## start exploring avalanche path data
+
+import glob
+import json
+import pandas as pd
+import numpy as np
+
+paths = glob.glob('../data/avalanche_path/bessans/*')
+
+with open(paths[0], 'r') as f:
+    info = json.load(f)
+
+geo_data = pd.read_csv('../data/geospatial_data/geo_data_bessans.csv')
+geo_data[['lat', 'lon']] = geo_data[['lat', 'lon']].round(4)
+
+for lat, lon in info['coordinate'][:-1]:
+    lat_df = geo_data.iloc[np.argmin(np.abs(geo_data['lat'] - lat))].lat
+    lon_df = geo_data.iloc[np.argmin(np.abs(geo_data['lon'] - lon))].lon
+    print(geo_data[(geo_data['lat'] == lat_df) & (geo_data['lon'] == lon_df)])
+
+geo_data[geo_data['lat'] == 45.307700]
+
+geo_data.iloc[(geo_data['lat'] - lat).abs().argsort()[0]]
+
+
+a = 6.9785
+round(a, 3)
+
+
+
+
 
