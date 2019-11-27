@@ -88,8 +88,6 @@ big_grid.to_csv('grid.csv')
 
 
 #### COMPUTE SLOPE AND ASPECT FROM VANOISE DEM
-
-
 for type, file in {'aspect': 'data/aspect_vanoise.tif', 'slope': 'data/slope_vanoise.tif', 'dem': 'data/dem_vanoise.tif'}.items():
     with rasterio.open(file) as src:
         elevation_data = src.read(1)
@@ -104,6 +102,45 @@ for type, file in {'aspect': 'data/aspect_vanoise.tif', 'slope': 'data/slope_van
         x, y = transform(projection, outProj, *transformation * (x, y))    
         grid = pd.DataFrame(np.concatenate((x, y), axis=1), columns=['lon', 'lat'])
         grid['val'] = elevation_data.reshape(-1, 1)
-        grid.to_csv(f'data/{type}_data.csv')
+        grid.to_csv(f'data/geospatial_data/{type}_data.csv')
+
+
+
+#### For now, we work on Bessans city
+
+### Upper left and lower right coordinates around Bessans
+upper_left = 6.820573, 45.380776#6.896154, 45.346260
+lower_right = 7.183430, 45.241721#7.129268, 45.304818, 
+
+bessans_data = pd.DataFrame()
+for type in ['slope', 'aspect', 'dem']:
+    data = pd.read_csv(f'data/geospatial_data/{type}_data.csv')
+    data = data[(data['lat'] < upper_left[1]) & (data['lat'] > lower_right[1])]
+    data = data[(data['lon'] > upper_left[0]) & (data['lon'] < lower_right[0])]
+    bessans_data = pd.concat([bessans_data, data.rename(columns={'val': type})], axis=1)
+
+# clean data
+bessans_data = bessans_data.loc[:, ~bessans_data.columns.duplicated()]
+bessans_data = bessans_data[(bessans_data['aspect'] != -9999.0)]
+bessans_data = bessans_data[(bessans_data['slope'] != -9999.0)]
+bessans_data['sin_aspect'] = bessans_data['aspect'].apply(lambda x: np.sin(np.pi * x / 180))
+bessans_data['cos_aspect'] = bessans_data['aspect'].apply(lambda x: np.cos(np.pi * x / 180))
+
+
+
+# bessans_data.drop('Unnamed: 0', axis=1, inplace=True)
+bessans_data.to_csv('data/geospatial_data/geo_data_bessans.csv', index=False)
+
+
+a = pd.concat([data for i in range(10)], axis=1)
+b = pd.concat([data for i in range(100)])
+
+
+
+np.sin(np.pi * 360/180)
+np.cos(np.pi * 360/180)
+
+
+
 
 

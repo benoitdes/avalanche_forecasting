@@ -67,7 +67,7 @@ for xlsx_file in glob.glob('data/epa_reports/xlsx/*'):
         data['city'] = xlsx_file.split('_')[-1].split('.')[0]
         all_data = pd.concat([all_data, data[['city', 'date1', 'date2', 'site_id', 'numero_id', 'altitude départ', 'altitude arrivée', 'longeur (m)', 'largeur (m)', 'hauteur (m)']]])
 
-all_data.to_csv('data/all_epa_reports_data.csv', index=False)
+all_data.to_csv('data/epa_reports/all_epa_reports_data.csv', index=False)
 
 #### SELECT EVENT THAT TOOK PLACE AFTER 2010 (we do not have snow / weather information older than that)
 
@@ -97,13 +97,13 @@ for city in dataset['city'].unique():
 
 dataset = dataset[dataset['good']]
 
-dataset.to_csv('data/all_recent_epa_reports_data.csv')
+dataset.to_csv('data/epa_reports/all_recent_epa_reports_data.csv')
 
 
 
 ## SELECT ONLY OBSERVATION FOR PATH WITH AT LEAST 10 EVENTS AND FOR VANOISE CITY
 
-dataset = pd.read_csv('data/all_recent_epa_reports_data.csv')
+dataset = pd.read_csv('data/epa_reports/all_recent_epa_reports_data.csv')
 dataset = dataset.rename(columns={'hauteur (m)': 'hauteur', 'longeur (m)': 'longueur', 'largeur (m)': 'largeur'})
 
 
@@ -123,13 +123,8 @@ for city in dataset['city'].unique():
             if city in ['BESSANS', 'BONNEVAL-SUR-ARC', 'PRALOGNAN-LA-VANOISE', "VAL-D'ISERE", 'TIGNES']:
                 final_data = pd.concat([final_data, data_site[data_site['good']]])
 
-final_data.to_csv('data/epa_reports_vanoise.csv', index=False)
+data = final_data.copy()
 
-
-
-### WE ARE FIRST GOING TO WORK ON VANOISE DATASETS WHERE THERE IS A LOT OF AVALANCHE EVENTS
-
-data = pd.read_csv('data/epa_reports_vanoise.csv')
 data[['date1', 'date2']] = data[['date1', 'date2']].applymap(lambda x: datetime.datetime.strptime(x, '%d/%m/%y'))
 data = data[-data['altitude départ'].isnull()]
 data = data[-data['altitude arrivée'].isnull()]
@@ -152,36 +147,96 @@ data['altitude départ'] = data['altitude départ'].astype(float)
 data['altitude arrivée'] = data['altitude arrivée'].astype(float)
 data = data[data['altitude départ'] != -1]
 
-#### FIRST WE CONCENTRATE ON BESSANS CITY ####
+data.to_csv('data/epa_reports/epa_reports_vanoise.csv', index=False)
 
+
+
+### WE ARE FIRST GOING TO WORK ON VANOISE DATASETS WHERE THERE IS A LOT OF AVALANCHE EVENTS
+
+data = pd.read_csv('data/epa_reports/epa_reports_vanoise.csv')
 data = data[data['city'] == 'BESSANS']
+data.to_csv('data/epa_reports/epa_reports_bessans.csv', index=False)
+
+#### FIRST WE CONCENTRATE ON BESSANS CITY ####
+data = pd.read_csv('data/epa_reports/epa_reports_bessans.csv')
+data[['date1', 'date2']] = data[['date1', 'date2']].applymap(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d'))
 
 
 ## stat about altitude de depart des avalanches
 data.groupby('site_id')['altitude départ'].describe()
 
-
-
-
+# number of occurences per site id
 data.groupby('site_id')['good'].count()
 
+# keep only observations where avalanche elevation is present
+data = data[~data['altitude départ'].isnull()]
 
 
 
-## CHECK WHAT TO DO WHEN DATE1 AND DATE2 ARE DIFFERENT (UNDERSTAND WHAT ARE THOSE COLUMNS) regadez dans le doc qui donne les instructions sur le recueil des données EPA
-#keep only observations where longeur, largeur, hauteur are available'
-data = data.dropna()
-# keep only observations where we have at most 2 days of uncertainty
-data = data[(data['date2'] - data['date1']) <= '2 days']
+
+# ESSAYER DE RECUPERER L'HEURE DU CONSTAT LORS DE LA LECTURE DES XLSX ?? 
+
+# data1 and date2 are the time interval when the avalanche occured
+# keep only observations where we have at most 1 days of uncertainty
+data = data[(data['date2'] - data['date1']) <= '1 days']
 
 
 
+
+
+### donnée dispo à Bessans (les autres donnees non mentionnees ne sont pas assez présente ou inutile)
+## ht_neige (ht neige totale): 100%
+## ssfrai (hauteur neige fraiche): 100%
+## phenspe1 (phenomène spéciale 1): 100%
+## td: point de rosée: 99%
+## rr24 (précicipation dernière 24h en mm): 96%
+## t (temperature): 100%
+## tx24 (temp max 24h): 95%
+## tn24 (temp min 24h): 95%
+## dd (direction du vent), probablement moyen sur 24h (bcp de 0): 100%
+## u (humidité): 100%
+## ff (force vent), probablement moyen sur 24h (bcp de 0): 100%
+## n (nebulisté totale, en %): 100%
+## aval_risque (risque avalanche): 75%
+
+
+
+
+### ML Dataset on Bessans
+    
+avalanche_dataset = pd.read_csv('data/epa_reports/epa_reports_bessans.csv')
+avalanche_dataset = avalanche_dataset[~avalanche_dataset['altitude départ'].isnull()]
+avalanche_dataset[['date1', 'date2']] = avalanche_dataset[['date1', 'date2']].applymap(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d'))
+avalanche_dataset = avalanche_dataset[(avalanche_dataset['date2'] - avalanche_dataset['date1']) <= '1 days']
+avalanche_dataset = avalanche_dataset.rename(columns={'date1': 'date'})
+avalanche_dataset['date'] = pd.to_datetime(avalanche_dataset['date'])
+
+
+## load weather data 
 all_month = ['0'+str(i) for i in range(1,10)] + [str(i) for i in range(10,13)]
 weather_data = sD.create_dataset(list_year=[str(i) for i in range(2010,2019)],
                                           list_month=all_month)
 weather_data = weather_data[weather_data['Nom']=='Bessans']
 weather_data['date'] = weather_data['date'].apply(lambda x: x.round('D'))
 
+## keep only columns where at least 80% of observations 
+weather_data = sD.select_cols(weather_data, 0.8)
+weather_data = weather_data[['date', 'Nom', 'ht_neige', 'ssfrai', 'td', 'rr24', 't', 'tx24', 'tn24', 'dd', 'u', 'ff', 'n', 'aval_risque']]
+for col in list(set(weather_data.columns) - set(['date', 'Nom'])):
+    weather_data[col] = weather_data[col].astype(float)
+
+
+
+data_with_avalanche = avalanche_dataset.merge(weather_data, on=['date'], how='inner')
+
+
+
+
+
+
+
+### SELECTIONNER LES COLONNES CI DESSUS ET REGARDER CE QUE CELA DONNE SUR LES STATIONS PROCHES
+### REGARDER AUSSI SUR LES STATIONS PROCHES, LES DONNEES DE TYPE PROFONDEUR DE SONDE, TEMP DE NEIGE ETC (QUI SONT TRES UTILES)
 
 
 ### THE GROUPBY DROP COLUMNS. IT MAY BE BECAUSE COLUMNS TYPE (https://stackoverflow.com/questions/50054008/pandas-dataframe-groupby-cause-drop-columns)
@@ -191,6 +246,20 @@ data.rename(columns={'date1': 'date'}).merge(weather_data, on='date', how='inner
 
 # Beaucoup d'observations de vitesse du vent à 0 probablement car moyenne sur 24h. 
 # Donnees plus precise pour vent / direction du vent pour chaque station ?? https://www.infoclimat.fr/observations-meteo/archives/5/decembre/2012/bessans/000N1.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -214,17 +283,6 @@ n_gullies = 49
 # They say to have 89335 no avalanche events. It is near my estimation so I guess that they are considering only one point per avalanche path
 
 
-
-
-
-
-
-
-
-
-## Cleaner colonnes, site_id et numéro_id et bien comprendre à quoi ces valeurs correspondent
-## --> comprendre l'histoire de toilletage
-## info sur chaque site (altitude des sites, tracé cartes): ftp://avalanchesftp.grenoble.cemagref.fr/epaclpa/EPA_Fiches_de_Sites/04/
 
 
 
