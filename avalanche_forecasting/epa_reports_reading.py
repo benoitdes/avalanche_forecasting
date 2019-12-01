@@ -11,7 +11,6 @@ import pandas as pd
 import datetime
 import glob
 import sys
-sys.path.append('avalanche_forecasting')
 import station_data_reading as sD
 
 
@@ -204,11 +203,13 @@ data = data[(data['date2'] - data['date1']) <= '1 days']
 
 ### ML Dataset on Bessans
     
-avalanche_dataset = pd.read_csv('data/epa_reports/epa_reports_bessans.csv')
+avalanche_dataset = pd.read_csv('../data/epa_reports/epa_reports_bessans.csv')
 avalanche_dataset = avalanche_dataset[~avalanche_dataset['altitude départ'].isnull()]
 avalanche_dataset[['date1', 'date2']] = avalanche_dataset[['date1', 'date2']].applymap(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d'))
 avalanche_dataset = avalanche_dataset[(avalanche_dataset['date2'] - avalanche_dataset['date1']) <= '1 days']
-avalanche_dataset = avalanche_dataset.rename(columns={'date1': 'date'})
+
+## we will consider avalanche date as data2 in avalanche_dataset
+avalanche_dataset = avalanche_dataset.rename(columns={'date2': 'date'})
 avalanche_dataset['date'] = pd.to_datetime(avalanche_dataset['date'])
 
 
@@ -225,9 +226,40 @@ weather_data = weather_data[['date', 'Nom', 'ht_neige', 'ssfrai', 'td', 'rr24', 
 for col in list(set(weather_data.columns) - set(['date', 'Nom'])):
     weather_data[col] = weather_data[col].astype(float)
 
+weather_data = weather_data.groupby(['date', 'Nom']).mean().reset_index()
+weather_data.to_csv('weather_bessans.csv', index=False)
 
 
-data_with_avalanche = avalanche_dataset.merge(weather_data, on=['date'], how='inner')
+
+
+
+weather_data = pd.read_csv('weather_bessans.csv')
+weather_data['date'] = weather_data['date'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d'))
+
+
+dataset = avalanche_dataset.merge(weather_data, on='date')
+#dataset.groupby('site_id').size()
+
+
+## Quand on join avalanche_data avec weather data, on passe de 438 observations
+## à 185. On pert enormement de données a cause du manque de donnees meteo.
+## Ce serait interessant de regarder si avec les stations météo autour, on a pas plus 
+## de données.
+## Etrange d'avoir autant de trou de données dans les données météo, regardez ça de plus près
+
+
+
+#### we will work with several path id but considering it is the same one to exclude the spatial
+#### but have enough data with avalanche observations
+
+site_ids = [17, 46, 16, 18, 15, 14, 13, 12, 11, 20]
+dataset[dataset['site_id'].isin(site_ids)]
+
+
+
+
+
+
 
 
 
@@ -239,9 +271,6 @@ data_with_avalanche = avalanche_dataset.merge(weather_data, on=['date'], how='in
 ### REGARDER AUSSI SUR LES STATIONS PROCHES, LES DONNEES DE TYPE PROFONDEUR DE SONDE, TEMP DE NEIGE ETC (QUI SONT TRES UTILES)
 
 
-### THE GROUPBY DROP COLUMNS. IT MAY BE BECAUSE COLUMNS TYPE (https://stackoverflow.com/questions/50054008/pandas-dataframe-groupby-cause-drop-columns)
-weather_data = weather_data.groupby(['date', 'Nom']).mean().reset_index()
-data.rename(columns={'date1': 'date'}).merge(weather_data, on='date', how='inner')
 
 
 # Beaucoup d'observations de vitesse du vent à 0 probablement car moyenne sur 24h. 

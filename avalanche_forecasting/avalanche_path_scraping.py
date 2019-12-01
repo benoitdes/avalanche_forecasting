@@ -67,6 +67,7 @@ with open(f'../data/avalanche_path/bessans/{site_id}.json', 'w') as f:
 with open(f'../data/avalanche_path/bessans/{site_id}.json', 'r') as f:
     a = json.load(f)
 
+
 ## start exploring avalanche path data
 
 import glob
@@ -74,28 +75,62 @@ import json
 import pandas as pd
 import numpy as np
 
-paths = glob.glob('../data/avalanche_path/bessans/*')
-
-with open(paths[0], 'r') as f:
-    info = json.load(f)
-
-geo_data = pd.read_csv('../data/geospatial_data/geo_data_bessans.csv')
-geo_data[['lat', 'lon']] = geo_data[['lat', 'lon']].round(4)
-
-for lat, lon in info['coordinate'][:-1]:
-    lat_df = geo_data.iloc[np.argmin(np.abs(geo_data['lat'] - lat))].lat
-    lon_df = geo_data.iloc[np.argmin(np.abs(geo_data['lon'] - lon))].lon
-    print(geo_data[(geo_data['lat'] == lat_df) & (geo_data['lon'] == lon_df)])
-
-geo_data[geo_data['lat'] == 45.307700]
-
-geo_data.iloc[(geo_data['lat'] - lat).abs().argsort()[0]]
+list_paths = glob.glob('../data/avalanche_path/bessans/*.json')
 
 
-a = 6.9785
-round(a, 3)
+def create_paths_info(path_fps):
+
+    paths_info = pd.DataFrame()
+    for path_fp in path_fps:
+        print(path_fp)
+        path_info = create_path_info(path_fp)
+        site_id = path_fp.split('/')[-1].split('.')[0]
+        path_info['site_id'] = site_id
+        paths_info = pd.concat([paths_info, path_info])
+
+    return paths_info
 
 
+def create_path_info(path_fp):
+
+    geo_data = pd.read_csv('../data/geospatial_data/geo_data_bessans.csv')
+    geo_data[['lat', 'lon']] = geo_data[['lat', 'lon']].round(4)
+
+    with open(path_fp, 'r') as f:
+        info = json.load(f)
+
+    path = pd.DataFrame(info)
+    path[['lat', 'lon']] = path['coordinate'].apply(pd.Series)
+    path = path.drop('coordinate', axis=1)
+    path[['lat', 'lon']] = path[['lat', 'lon']].round(4)
+
+
+    path_infos = pd.DataFrame()
+    for lat, lon in zip(path.lat, path.lon):
+        lat_df = geo_data.iloc[np.argmin(np.abs(geo_data['lat'] - lat))].lat
+        lon_df = geo_data.iloc[np.argmin(np.abs(geo_data['lon'] - lon))].lon
+        spatial_data = geo_data[(geo_data['lat'] == lat_df) & (geo_data['lon'] == lon_df)].rename(columns={'lat': 'lat_1', 'lon': 'lon_1'})
+        path_info = pd.concat([path[(path.lat == lat) & (path.lon == lon)].reset_index(drop=True), spatial_data.reset_index(drop=True)], axis=1, sort=True)
+        path_infos = pd.concat([path_infos, path_info])
+
+    path_infos.dropna(inplace=True)
+
+    ## assez grosse difference entre altitude du dem et altitude geoportail (autour de 200m)
+    ## difference assez eleve quand la pente est raide (logique car dem à 30m)
+    ## on utilise la colonne altitude car les données geoportail sont plus précise
+    print('diff altitude', (path_infos['altitude'] - path_infos['dem']).mean())
+    
+    path_infos = path_infos[['altitude', 'pente', 'lat', 'lon', 'slope', 'sin_aspect', 'cos_aspect', 'aspect']]
+    
+    return path_infos
+
+
+
+path_infos = create_paths_info(list_paths)
+path_infos.to_csv('../data/avalanche_path/bessans/paths_info.csv', index=False)
+
+
+same_orientation_side_ids = ['017', '046', '016', '018', '015', '014', '013', '012', '011', '020']
 
 
 
