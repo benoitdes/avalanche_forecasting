@@ -15,7 +15,7 @@ import station_data_reading as sD
 
 
 
-def find_first_row(data):
+def fidata):
     for i in range(len(data))[:4]:
         row_val = data.iloc[i]
         for j in range(len(row_val)):
