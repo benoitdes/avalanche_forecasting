@@ -34,9 +34,7 @@ driver.get(url)
 
 ## before that, you need to create the elevation profile on geoportail
 
-elems = driver.find_elements_by_xpath("//*[name()='svg']//*[name()='circle']")
-
-altitudes = []
+elems =
 pentes = []
 coords = []
 for i, elem in enumerate(elems, start=1):
